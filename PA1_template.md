@@ -1,16 +1,10 @@
----
-title: "PA1_template"
-output: 
-  html_document: 
-    keep_md: yes
----
+# PA1_template
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 Initialize libraries and read in data
-```{r}
+
+```r
 set.seed(15)
 suppressMessages(suppressWarnings(library(tidyverse)))
 suppressWarnings(library(stringr))
@@ -18,21 +12,37 @@ activityData <- read.csv('activity.csv')
 ```
 
 Histogram of steps taken each day
-```{r}
+
+```r
 stepsPerDay <- activityData %>% 
   group_by(date) %>% 
   summarise(TotalSteps = sum(steps))
 hist(stepsPerDay$TotalSteps)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
 Mean and median of the number of steps taken each day
-```{r}
+
+```r
 print(str_c('Mean: ',mean(stepsPerDay$TotalSteps,na.rm = TRUE)))
+```
+
+```
+## [1] "Mean: 10766.1886792453"
+```
+
+```r
 print(str_c('Median: ',median(stepsPerDay$TotalSteps,na.rm = TRUE)))
 ```
 
+```
+## [1] "Median: 10765"
+```
+
 Time series plot of the number of steps taken
-```{r}
+
+```r
 avgIntervalSteps <- activityData %>% 
   group_by(interval) %>% 
   summarise(avgSteps = mean(steps,na.rm = TRUE))
@@ -41,45 +51,78 @@ avgIntervalSteps %>%
   geom_line()
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
 Highest average step count interal
-```{r}
+
+```r
 avgIntervalSteps2 <- avgIntervalSteps %>% 
   arrange(desc(avgSteps))
 print(str_c('Highest average step count occurs at interval: ',avgIntervalSteps2$interval[1]))
 ```
 
+```
+## [1] "Highest average step count occurs at interval: 835"
+```
+
 Print total NA rows
-```{r}
+
+```r
 NARows <- activityData %>% 
   filter(is.na(steps))
 print(str_c('Total NA rows: ',nrow(NARows)))
 ```
 
+```
+## [1] "Total NA rows: 2304"
+```
+
 Impute missing values using interval mean
-```{r}
+
+```r
 imputedActivityData <- activityData %>% 
   left_join(avgIntervalSteps) %>% 
   mutate(steps = ifelse(is.na(steps),avgSteps,steps)) %>% 
   select(-avgSteps)
 ```
 
+```
+## Joining, by = "interval"
+```
+
 Histogram of steps taken each day of imputed data set
-```{r}
+
+```r
 stepsPerDayImputed <- imputedActivityData %>% 
   group_by(date) %>% 
   summarise(TotalSteps = sum(steps))
 hist(stepsPerDay$TotalSteps)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
 Mean and median of the number of steps taken each day of imputed data set
 Median changes very slightly with imputed data
-```{r}
+
+```r
 print(str_c('Mean: ',mean(stepsPerDayImputed$TotalSteps,na.rm = TRUE)))
+```
+
+```
+## [1] "Mean: 10766.1886792453"
+```
+
+```r
 print(str_c('Median: ',median(stepsPerDayImputed$TotalSteps,na.rm = TRUE)))
 ```
 
+```
+## [1] "Median: 10766.1886792453"
+```
+
 Panel plot of weekday vs weekend
-```{r}
+
+```r
 weekdayImputedData <- imputedActivityData %>% 
   mutate(Weekday = weekdays(as.Date(as.character(date)))) %>% 
   mutate(Weekday = ifelse(Weekday == 'Saturday' | Weekday == 'Sunday','Weekend','Weekday'))
@@ -91,4 +134,6 @@ weekdayImputedData %>%
   geom_line() + 
   facet_wrap(~Weekday,nrow = 2, ncol = 1)
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
