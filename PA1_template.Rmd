@@ -1,25 +1,92 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+Initialize libraries and read in data
+```{r}
+set.seed(15)
+suppressMessages(suppressWarnings(library(tidyverse)))
+suppressWarnings(library(stringr))
+activityData <- read.csv('activity.csv')
+```
 
+Histogram of steps taken each day
+```{r}
+stepsPerDay <- activityData %>% 
+  group_by(date) %>% 
+  summarise(TotalSteps = sum(steps))
+hist(stepsPerDay$TotalSteps)
+```
 
+Mean and median of the number of steps taken each day
+```{r}
+print(str_c('Mean: ',mean(stepsPerDay$TotalSteps,na.rm = TRUE)))
+print(str_c('Median: ',median(stepsPerDay$TotalSteps,na.rm = TRUE)))
+```
 
-## What is mean total number of steps taken per day?
+Time series plot of the number of steps taken
+```{r}
+avgIntervalSteps <- activityData %>% 
+  group_by(interval) %>% 
+  summarise(avgSteps = mean(steps,na.rm = TRUE))
+avgIntervalSteps %>% 
+  ggplot(aes(interval,avgSteps)) + 
+  geom_line()
+```
 
+Highest average step count interal
+```{r}
+avgIntervalSteps2 <- avgIntervalSteps %>% 
+  arrange(desc(avgSteps))
+print(str_c('Highest average step count occurs at interval: ',avgIntervalSteps2$interval[1]))
+```
 
+Print total NA rows
+```{r}
+NARows <- activityData %>% 
+  filter(is.na(steps))
+print(str_c('Total NA rows: ',nrow(NARows)))
+```
 
-## What is the average daily activity pattern?
+Impute missing values using interval mean
+```{r}
+imputedActivityData <- activityData %>% 
+  left_join(avgIntervalSteps) %>% 
+  mutate(steps = ifelse(is.na(steps),avgSteps,steps)) %>% 
+  select(-avgSteps)
+```
 
+Histogram of steps taken each day of imputed data set
+```{r}
+stepsPerDayImputed <- imputedActivityData %>% 
+  group_by(date) %>% 
+  summarise(TotalSteps = sum(steps))
+hist(stepsPerDay$TotalSteps)
+```
 
+Mean and median of the number of steps taken each day of imputed data set
+Median changes very slightly with imputed data
+```{r}
+print(str_c('Mean: ',mean(stepsPerDayImputed$TotalSteps,na.rm = TRUE)))
+print(str_c('Median: ',median(stepsPerDayImputed$TotalSteps,na.rm = TRUE)))
+```
 
-## Imputing missing values
+Panel plot of weekday vs weekend
+```{r}
+weekdayImputedData <- imputedActivityData %>% 
+  mutate(Weekday = weekdays(as.Date(as.character(date)))) %>% 
+  mutate(Weekday = ifelse(Weekday == 'Saturday' | Weekday == 'Sunday','Weekend','Weekday'))
 
+weekdayImputedData %>% 
+  group_by(Weekday,interval) %>% 
+  summarise(meanSteps = mean(steps)) %>% 
+  ggplot(aes(interval,meanSteps)) +
+  geom_line() + 
+  facet_wrap(~Weekday,nrow = 2, ncol = 1)
+```
 
-
-## Are there differences in activity patterns between weekdays and weekends?
